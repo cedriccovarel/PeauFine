@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex,nofollow">
+<title>PeauFine</title>
+<style>
+:root{color-scheme:dark}*{box-sizing:border-box}html,body{height:100%;margin:0}
+body{display:grid;place-items:center;background:#1b1e22;color:#e3e6ea;font:15px/1.5 system-ui,-apple-system,"Segoe UI",sans-serif;padding:16px}
+form{width:min(360px,100%);display:grid;gap:12px;background:#24272c;border:1px solid #3a3f46;border-radius:10px;padding:28px 24px}
+h1{margin:0;font-size:22px;letter-spacing:.01em}p{margin:0;color:#a1a9b2;font-size:13px}
+input{width:100%;padding:10px 12px;border:1px solid #3a3f46;border-radius:6px;background:#2d3137;color:#fff;font:inherit}
+input:focus{outline:2px solid #5aa2ff;outline-offset:0;border-color:transparent}
+button{padding:10px 12px;border:0;border-radius:6px;background:#4a90e2;color:#fff;font:600 15px system-ui,sans-serif;cursor:pointer}button:disabled{opacity:.6;cursor:wait}
+.err{color:#ff8a7a;min-height:20px}
+</style></head><body>
+<form id="f" autocomplete="off"><h1>PeauFine</h1><p>Accès réservé.</p>
+<label for="pw" style="font-size:13px;color:#a1a9b2">Mot de passe</label><input id="pw" type="password" autocomplete="current-password" autofocus required>
+<button id="go" type="submit">Ouvrir</button><div class="err" id="err" role="alert"></div></form>
+<script>
+(function(){ 'use strict';
+  var d=function(s){ return Uint8Array.from(atob(s),function(c){ return c.charCodeAt(0); }); };
+  document.getElementById('f').addEventListener('submit',async function(e){ e.preventDefault(); var b=document.getElementById('go'), er=document.getElementById('err'); b.disabled=true; er.textContent=''; b.textContent='Ouverture…';
+    try{ var pkg=await (await fetch('app.enc',{cache:'no-store'})).json(); var pw=new TextEncoder().encode(document.getElementById('pw').value);
+      var base=await crypto.subtle.importKey('raw',pw,'PBKDF2',false,['deriveKey']);
+      var key=await crypto.subtle.deriveKey({name:'PBKDF2',salt:d(pkg.salt),iterations:pkg.iter,hash:'SHA-256'},base,{name:'AES-GCM',length:256},false,['decrypt']);
+      var html=new TextDecoder().decode(await crypto.subtle.decrypt({name:'AES-GCM',iv:d(pkg.iv)},key,d(pkg.ct)));
+      document.open(); document.write(html); document.close();
+    }catch(x){ er.textContent='Mot de passe incorrect.'; b.disabled=false; b.textContent='Ouvrir'; document.getElementById('pw').select(); }
+  });
+})();
+</script></body></html>
